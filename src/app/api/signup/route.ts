@@ -4,22 +4,30 @@ import bcrypt from "bcryptjs";
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 
 export async function POST(request: Request) {
+  //connect to the db
   await dbConnect();
   try {
     // always use await when we destructure data
+    // extract data from body
     const { username, email, password } = await request.json();
+
     const existingUserFindByUsername = await UserModel.findOne({
       username,
       isVerified: true,
     });
+
     if (existingUserFindByUsername) {
       return Response.json(
         { success: false, message: "Username already taken" },
         { status: 400 }
       );
     }
+
     const existingUserByEmail = await UserModel.findOne({ email });
+
+    //generating verify code
     const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
+
     if (existingUserByEmail) {
       if (existingUserByEmail.isVerified) {
         return Response.json(
@@ -41,6 +49,7 @@ export async function POST(request: Request) {
       const expiryDate = new Date();
       expiryDate.setHours(expiryDate.getHours() + 1);
 
+      //creating new user
       const newUser = new UserModel({
         username,
         email,
